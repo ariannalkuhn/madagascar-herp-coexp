@@ -66,10 +66,15 @@ OUTPUTS:
 INPUTS:
 Population-level mtDNA fasta alignments from step 2:
 	x (*_1.fas, *_3.fas as DNAbin objects, use: Pipemaster{fasta2ms, ms.to.DNAbin})
+hap.div.R
 	
 RUN:
 '/4_exp_stats'
-popstats.R
+expansion.stats.R
+
+
+OUTPUTS:
+exp_stats.csv
 
 
 5 - Select between three probable demographic models for each population (constant size, bottleneck, expansion) and obtained median estimates of parameter values of interest with 95% highest posterior density (HPD) intervals for expanding populations
