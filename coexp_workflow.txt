@@ -1,7 +1,7 @@
-1.) Infer maximum clade credibility (MCC) tree (BEAST 1.8.4) under a phylogenetic clock model using Yule tree priors from 5,000 post burn-in trees
+1 - Infer maximum clade credibility (MCC) tree (BEAST 1.8.4) under a phylogenetic clock model using Yule tree priors from 5,000 post burn-in trees
 
-INPUT FILES:
-Species-level mtDNA fasta alignments 
+INPUTS:
+Species-level mtDNA fasta alignments (examples included below, all fastas found in '/species_fastas'):
  	Leioheterodon_modestus_mt.fas
  	Leioheterodon_madagascariensis_mt.fas
  	Dromicodryas_bernieri_mt.fas
@@ -9,94 +9,73 @@ Species-level mtDNA fasta alignments
 beastgen.jar
 beast.jar
 BSP.temp
-BSLP.R
 
 RUN:
-in terminal
->cd 'path/Step1_MCCtree'
->rscript BSLP.R
+'/1_MCCtree'
+BSLP.R
 
-OUTPUT FILES:
+OUTPUTS:
 *.log 
 *.trees
 *.xml 
 
-2.) Use Bayesian implementation of the generalized mixed Yule-coalescent Model to partition the data into population level units from within the assembled species-level mitochondrial datasets
+2 - Use Bayesian implementation of the generalized mixed Yule-coalescent Model to partition the data into population level units from within the assembled species-level mitochondrial datasets
 Use 0.5 probability of conspecificity and minimum of 15 samples as a cut-off, for each independent dataset, run MCMC 50,000 generations, discarding the first 40,000 as burn-in and sample every 100 generations
-clust.prob=0.5, min.samp = 10, ntrees=100, mcmc=50,000, burnin=40,000
+clust.prob = 0.5, min.samp = 10, ntrees = 100, mcmc = 50,000, burnin = 40,000
 
-INPUT FILES:
-idiv. folders with the following inside (for each indep. species)
+INPUTS:
+idiv. folders/species containing the following
  	*.fas
  	*.trees
 bGMYC_1.0.2.tar.gz
+
+RUN
+'/2_bGMYC'
 GMYC.R
 
-RUN (note, if path names or ID names in fasta are too long, there will be an error):
->R CMD INSTALL path/bGMYC_1.0.2.tar.gz
->cd 'path/Step2_bGMYC'
->rscript GMYC.R
-
-OUTPUT FILES:
+OUTPUTS:
 *_1.fas
-*_3.fas #*_2.fas removed because <10 samples retained
+*_3.fas # *_2.fas removed because <10 samples retained
 result.multitree.pdf
 heatmap.pdf
 result1.pdf
 
 
-3.) Infer historical population dynamics using the coalescent-based generalized Bayesian skyline plot. Runs were conducted under the HKY model using a
-random starting tree and a strict molecular clock assuming a mutation rate of 1x10-8. Parameter estimates were based on posterior probability distributions constructed by sampling the
-stationary distribution for 50,000,000 generations every 5,000 steps with the first 25% discarded as burn-in
+3 - Infer historical population dynamics using the coalescent-based generalized Bayesian skyline plot. Runs were conducted under the HKY model using a random starting tree and a strict molecular clock assuming a mutation rate of 1x10-8. Parameter estimates based on posterior probability distributions constructed by sampling the stationary distribution for 50,000,000 generations every 5,000 steps with the first 25% discarded as burn-in
 
-INPUT FILES:
-Population-level mtDNA fasta alignments from step (2) that had >10 samples
+INPUTS:
+Population-level mtDNA fasta alignments from step 2 that retained >10 samples
  	*_1.fas
 	*_3.fas
 beastgen.jar
 beast.jar
 BSP.temp
-BSLP.R
 
 RUN:
-in terminal
->cd 'Step3_BSLP'
->rscript BSLP.R
+'/3_BSLP'
+BSLP.R
 
-OUTPUT FILES:
+OUTPUTS:
 *.log
 *.trees
 *.xml
 
 
-4.) Calculate neutrality statistics Tajima’s D, Ramos-Onsins and Rozas’s R2 - Estimate significance using simulations of 1,000 replicates under an
-228 equilibrium model. Calculate diversity statistics H and Pi.
+4 - Calculate neutrality statistics Tajima’s D, Ramos-Onsins and Rozas’s R2 - Estimate significance using simulations of 1,000 replicates under an equilibrium model. Calculate diversity statistics H and Pi.
 
-INPUT FILES:
-Population-level mtDNA fasta alignments from step (2)
+INPUTS:
+Population-level mtDNA fasta alignments from step 2:
 	x (*_1.fas, *_3.fas as DNAbin objects, use: Pipemaster{fasta2ms, ms.to.DNAbin})
-library(Pipemaster: hap.div.R)
-library(pegas: tajima.test, R2.test, nuc.div,)
 	
 RUN:
-in R
-#test the neutral mutation hypothesis with Tajima's D
-tajima.test(x)
-#test the neutral mutation hypothesis with Rosas R2
-R2.test(x, B = 1000, theta = 1, plot = TRUE, quiet = FALSE)
-#Calculate pi (nucelotide diversity)
-nuc.div(x, variance = FALSE, pairwise.deletion = FALSE)
-#Calculate H (haplotype diversity)
-H.div(x)
-
-OUTPUT FILES:
+'/4_exp_stats'
+popstats.R
 
 
-5.) Select between three probable demographic models for each population (constant size, bottleneck, expansion) and obtained median estimates of parameter values of interest 
-(e.g., effective population size, Ne) with 95% highest posterior density (HPD) intervals around these values for expanding populations
+5 - Select between three probable demographic models for each population (constant size, bottleneck, expansion) and obtained median estimates of parameter values of interest with 95% highest posterior density (HPD) intervals for expanding populations
 
 INPUT:
-Population-level mtDNA fasta alignments from step (2)
+Population-level mtDNA fasta alignments from step 2
  	*_1.fas
  	*_2.fas
 	*_3.fas
@@ -105,254 +84,112 @@ Ne.txt
 NeA.txt
 gene.txt
 
-
+RUN:
+'/5_singlepop_abc'
+single_pop_ABC.R
                                   
-OUTPUT:
+OUTPUTS:
 *.PDF
 *demog_sim.txt
 *pop_parameters.txt
-*.fas.PDF  (PCA plot)
+*.fas.PDF  # (PCA plot)
 
-6.)coexpansion Hierarchical model simulation
+6 - Coexpansion hierarchical model simulation
 
 INPUT:
-(observed) Population-level mtDNA fasta alignments from step (2) for expandinding populations ONLY
- 	*_1.fas
-	*_3.fas
-FOR EXPANDING POPULATIONS ONLY -- 
-exp.time.txt
-Ne.txt
-NeA.txt
-gene.txt
+For expanding populations only:
+ 	observed data: population-level mtDNA fasta alignments from step 2
+ 	 	*_1.fas
+	 	*_3.fas
+ 	exp.time.txt
+ 	Ne.txt
+ 	NeA.txt
+ 	gene.txt
 
 RUN:
-coexp.R
+'/6_coexp_sim'
 
- 
- and with either:
+parallel.R # For this paper, parallel(20) was used for all partitions
+coexp.R # Alternative time priors: Chan et al. (2014), Narrow Coexpansion Time model (NCT), Partitioned Time model (PT)
+parallel_sum.R # For this paper, parallel(20) was used for all partitions
 
-#Chan et al. (2014)
-sim.coexp(nsims=10000,var.zeta="FREE",th=0,coexp.prior=(10000,200000),Ne.prior=Ne.prior, alpha=T,
-       NeA.prior=NeA.prior,time.prior=coexp.prior,gene.prior=gene.prior,append.sims = F, path=getwd())
-
-
-#NarrowCoexpansionTime model 
-sim.coexp(nsims=10000,var.zeta="FREE",th=20000,coexp.prior=(10000,200000),Ne.prior=Ne.prior, alpha=T,
-       NeA.prior=NeA.prior,time.prior=time.prior,gene.prior=gene.prior,append.sims = F, path=getwd())
-
-OR
-
-#partitioned time model
-sim.coexpPT(nsims=1000,var.zeta="FREE",coexp.prior=(10000,200000),Ne.prior=Ne.prior, alpha=F,
-          NeA.prior=NeA.prior,time.prior=time.prior,gene.prior=gene.prior,append.sims = F, path=getwd())
-
-NOTE: to run parallel simulations, first run parallel.R:
-
-x=numer of parallel runs 
-
-parallel <- function (ncores){
-  
-  for(i in 1:ncores){
-      dir.create(paste('./',i, sep=""))
-      system(paste('cp *',' ./',i, sep=""))
-    }
-    
-  for(i in 1:ncores)
-    {
-    setwd(paste("./",i,sep=""))
-    system('qsub pbs.script', wait=T)
-    setwd("../")
-    }
-                                     
-}  
-parallel(x)
-
-THEN to summarize:
-parallel_sum.R
-
-parallel <- function (ncores){
-  
-  library(bigmemory)
-  
-  #table<-NULL
-    #for(i in 1:ncores)
-    #  {
-    #  setwd(paste("./",i,sep=""))
-    #  x<-read.big.matrix(file="pop_parameters.txt",header=T,type="float",sep="\t")
-    #  table<-rbind(table,x[,])
-    #  setwd("../")
-    #  print(i)
-    #  }
-    #write.table(table,"pop_parameters.txt",quote=F,col.names = T, row.names = F, sep="\t")                                 
-
-    table<-NULL
-    for(i in 1:ncores)
-      {
-      setwd(paste("./",i,sep=""))
-      x<-read.big.matrix(file="simulations.txt",header=T,type="float",sep="\t")
-      table<-rbind(table,x[,])
-      setwd("../")
-      print(i)
-      }
-    write.table(table,"simulations.txt",quote=F,col.names = T, row.names = F, sep="\t")                                 
-    }  
-
-parallel(x)
-
-OUTPUT:
+OUTPUTS:
 simulations.txt
 pop_parameters.txt
 
-7.) Calculate observed hipersummary statistics (hss) and estimate parameters of interest 
+7 - Calculate observed hss and approximate parameters of interest 
 (zeta, coexp time, avg. exp time, dispersion index)
 
 INPUTS:
-(observed) Population-level mtDNA fasta alignments from step (2) for exampinding populations ONLY
- 	*_1.fas
-	*_3.fas
+For expanding populations only:
+ 	observed data: Population-level mtDNA fasta alignments from step 2
+ 	 	*_1.fas
+	 	*_3.fas
+simulations.txt # From step 6
+
+RUN:
+'/7_calc_hss'
+coexp_summary.R
+
+OUTPUTS:
+NNET.pdf # Plots rejection and Nnet hss
+abc_summary.txt # Table of approximations for zeta E(t), ts, and DI
+
+8 - Explore model fit to observed data
+
+INPUTS:
+For expanding populations only:
+ 	observed data: Population-level mtDNA fasta alignments from step 2
+ 	 	*_1.fas
+	 	*_3.fas
 simulations.txt
 
 RUN:
-library(pegas)
-library(PipeMaster)
-library(ape)
-library(e1071)
-library(PopGenome)
-library(phyclust)
-library(devtools)
-library(bigmemory)
-library(abc)
-library(nnet)
+'/8_gfit'
+gfit_summary.R
 
-#read in sim & obs files
-observed<-observed.coexp.sumstat("~/Desktop/Arianna/newpriors/amphibians_observed")
-simulated<-read.big.matrix(file="simulations.txt", header=T, type="float", sep="\t")
-
-#change params, sumstats, to do rejection
-abc<-abc(target=observed, param=simulated[,1:4], sumstat=simulated[,5:20], tol=0.00004, transf=c("none"), method="rejection", hcorr=F, sizenet=10, numnet=20, maxit=2000, trace=F)
-rej<-summary(abc)
-write.table(rej, "abc_summary.txt")
-
-#change params, sumstats, to to do nnet
-abc.Nnet<-abc(target=observed, param=simulated[,1:4], sumstat=simulated[,5:20], tol=0.00004, transf=c("none"), method="neuralnet", hcorr=F, sizenet=10, numnet=20, maxit=2000, trace=F)
-x<-summary(abc.Nnet)
-pdf(file="NNET.pdf")
-plot(abc.Nnet, param=simulated[,1:4])
-dev.off()
-
-OUTPUT:
-NNET.pdf (plots rejection and Nnet hss approximations)
-abc_summary.txt
-
-8.) Explore model fit to obs data, across all pops and all sumstats
-
-#goodness of fit test plots hist of sim model with obs
-#5:20 are sum stats of interest, 1:4 are the 4 hyper params in the simulation file
-x<-gfit(observed,simulated[,5:20],nb.replicate = 100,tol=0.1)
-plot(x)
-plot.sim.obs(simulated[,5:20],observed)
+OUTPUTS:
+pcaGfit.pdf
+pcagfitsum.txt
 
 
-#cut down your # of simulations to ~50k
-simulated2<-simulated[1:100000,]
-simulated3<-simulated[,5:20]
+9 - Cross Validation with sim vs. true; cross Validation with 3 zeta bins
 
-#goodness of fit for each sum stat
-model1_gfit=gfit(target=observed, sumstat=simulated3, statistic=mean, nb.replicate=100)
-pdf(file="model1_histogram_Gfit.pdf")
-plot(model1_gfit,main="Histogram of model1")
-dev.off()
-model1_gfit_sum<-summary(nobuff_gfit)
-write.table(model1_gfit_sum, file="model1gfit.txt",quote=T,row.names=F)
-plot.sim.obs(simulated3, observed)
+INPUTS:
+For expanding populations only:
+ 	observed data: Population-level mtDNA fasta alignments from step 2
+ 	 	*_1.fas
+	 	*_3.fas
+simulations.txt
 
-#PCA goodness of fit for PT and NCT models
-#first need to concat the simulation files from model1 (PT) & model2 (NCT) & convert to matrix,
-#then make a models object that identifies rows w:x as model1 and rows y:z as model2 
-pcamodelfit<-gfitpca(target=observed, sumstat=simulated3, index=models, cprob=.1)
-pdf(file="pcaGfit.pdf")
-plot(pcamodelfit, main="PCA Gfit model1 vs model2")
-dev.off
-pcagfitsum<-summary(pcamodelfit)
-write.table(pcagfitsum, "file=pcagfitsum.txt", quote-T, row.names=F)
+RUN:
+'/9_CV'
+3zeta_CV.R
+CV_parallel.R
 
+10 - Extract elevation data from localities for Malagasy herp populations used in this study; test for correlation in explanatory variables, use Bayesian model selection to distinguish between models predicting neutrality and diversity response variavbles
 
+INPUTS:
+mg_species_elevation.csv
+mg_species.csv
+elevation_summary.csv
+real_merge.csv
+real_exp_merge.csv
 
+RUN:
+'/10_BMA'
 
-10.) Cross Validation - sim vs. true
+extract_alt.R # Summarize elevation information for each species
 
-library(devtools)
-install_github("gehara/PipeMaster@developing")
-library(PipeMaster)
-library(bigmemory)
-library(abc)
+BMS_tutorial.R # Run BMA: alternative predictor sets: 256 models = '/BMA_arid_humid', 048 models = '/BMA_ecoregion'
 
-setwd("/media/data2/Arianna/newpriors/complete_newpriors_NCT")
-simulated <- read.big.matrix(file="simulations.txt", header=T, type="float", sep="\t")
-
-#change params, sumstats, to to do rejection, .000, colors are the tolerances from cold to warm, 100/5000000
-abc5mill <- cv4abc(param=simulated[1:5000000,1:4], sumstat=simulated[1:5000000,5:20], tol=c(0.0002, 0.00002), method="rejection", trace=T, nval=100)
-abc<-abc5mill
-plot(abc$true[,1]~abc$estim$`tol2e-05`[,1], main="Complete NCT Model", sub="Tolerance 0.0002", 
-     xlab="ABC Estimated", ylab="ABC True", cex.sub=0.75)
-
-abline(lm(abc$true[,1]~abc$estim$`tol2e-05`[,1]), col="firebrick1")
-
-rsq <- function (x, y) {
-  res<-NULL 
-  for(i in 1:ncol(x)) res<-c(res, cor(x[,i], y[,i]) ^ 2)
-  names(res) <- colnames(x)
-  return(res)
-}
-
-#r2 for CV values
-rsq(abc$estim$`tol2e-05`, abc$true)
-rsq(abc$estim$`tol2e-04`, abc$true)
-
-#r2 for CV plots
-plots<-function(x,y){
-  
-  par(mfrow=c(2,2))
-  for(i in 1:ncol(x)){
-    plot(x[,i]~y[,i], xlab="true", ylab="estimated", main=colnames(x)[i])
-    abline(lm(x[,i]~y[,i]), col=2)
-    points(c(min(x[,i]), max(x[,i])), c(min(x[,i]), max(x[,i])), type="l", col=1) 
-    mtext("Cross Validation Complete NCT Model")
-    
-  }
-}
-
-par(cex.lab=1.5, cex.axis=1.2, cex.main=1.5, cex.sub=1.5)
-plots(abc$estim$`tol2e-05`, abc$true)
-plots(abc$estim$`tol2e-04`, abc$true)
+OUTPUTS:
+*_summary.csv
+*_topmodels.csv
+*_coef.csv
+*_PIPcoef.csv
+*_64models.pdf
+*_postmodelsizedist.pdf
+*_PosteriorModelSizeandProbs.pdf
 
 
-11.) Cross Validation with 3 zeta bins
-
-library(devtools)
-install_github("gehara/PipeMaster@developing")
-library(PipeMaster)
-library(bigmemory)
-library(abc
-observed<-observed.coexp.sumstat("/media/data2/Arianna/newpriors/complete_newobserved")
-x<-unique(simulated[,1])
-x<-sort(x)
-
-min.zeta <- simulated[which(simulated[,1] == min(x)),]
-max.zeta <- simulated[which(simulated[,1] == max(x)),]
-middle.zeta <- simulated[which(simulated[,1] == x[17]),]
-models<-rbind(min.zeta,middle.zeta,max.zeta)
-index<-c(rep("min",nrow(min.zeta)),
-         rep("middle",nrow(middle.zeta)),
-         rep("max",nrow(max.zeta)))
-
-prob <- postpr(target=observed,index=index,sumstat = models[,5:20],tol=0.001,method = "neuralnet")
-summary(prob)
-plot(prob)
-
-cv.prob <- cv4postpr(index=index,sumstat = models[,5:20],tol=0.001,method = "neuralnet", trace=T, nval=100)
-summary(cv.prob)
-
-sum(diag(cv.prob$tol0.001))/300``
-
-plot(cv.prob,xlab="Complete NCT Model")
